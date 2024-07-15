@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Card Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            margin: 0;
+            padding: 0;
+        }
+        .main-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 75%;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 25%;
+            height: 100vh;
+            overflow-y: auto;
+            border-left: 1px solid #ccc;
+            padding: 10px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .card-image {
+            width: 400px;
+            height: 600px;
+            object-fit: contain;
+        }
+        .card-details {
+            margin-top: 20px;
+        }
+        .navigation {
+            margin-top: 20px;
+        }
+        .navigation button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        .product-item {
+            margin-bottom: 10px;
+        }
+
+        /* Styles for the chatbot button and modal */
+        .chatbot-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 30px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .chatbot-modal {
+            display: none;
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 300px;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        .chatbot-modal-header {
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border-bottom: 1px solid #ccc;
+            border-radius: 5px 5px 0 0;
+        }
+        .chatbot-modal-body {
+            padding: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .chatbot-modal-footer {
+            padding: 10px;
+            border-top: 1px solid #ccc;
+        }
+        .chatbot-modal-footer input {
+            width: calc(100% - 22px);
+            padding: 5px;
+            margin-right: 5px;
+        }
+        .chatbot-modal-footer button {
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        <div class="container">
+            <img id="card-image" class="card-image" src="" alt="Card Image">
+            <div class="card-details">
+                <p id="product-name"></p>
+                <p id="product-url"></p>
+                <p id="condition"></p>
+                <p id="quantity"></p>
+                <p id="set-code"></p>
+                <p id="release-date"></p>
+                <p id="name"></p>
+                <p id="code"></p>
+            </div>
+            <div class="navigation">
+                <button onclick="previousCard()">Previous</button>
+                <button onclick="nextCard()">Next</button>
+                <button onclick="flagCard()">Flag in Discord</button>
+            </div>
+        </div>
+    </div>
+    <button class="chatbot-button" onclick="toggleChatbotModal()">Chatbot</button>
+    <div class="chatbot-modal" id="chatbotModal">
+        <div class="chatbot-modal-header">
+            <span>Chatbot</span>
+            <button onclick="toggleChatbotModal()" style="float: right;">&times;</button>
+        </div>
+        <div class="chatbot-modal-body" id="chatbotBody">
+            <!-- Chat messages will appear here -->
+        </div>
+        <div class="chatbot-modal-footer">
+            <input type="text" id="chatbotInput" placeholder="Type a message...">
+            <button onclick="sendChatbotMessage()">Send</button>
+        </div>
+    </div>
+    <div class="sidebar">
+        <h2>Product List</h2>
+        <div id="product-list"></div>
+    </div>
+    <script>
+        let currentCardId = 0;
+
+        function loadCard(cardId) {
+            fetch(`/card/${cardId}`)
+                .then(response => response.json())
+                .then(card => {
+                    console.log(card);  // Add a console log to see the card data
+                    document.getElementById('card-image').src = card.ImageURL;
+                    document.getElementById('product-name').innerText = `Product Name: ${card.ProductName}`;
+                    document.getElementById('product-url').innerHTML = `Product URL: <a href="${card.ProductURL}" target="_blank">${card.ProductURL}</a>`;
+                    document.getElementById('condition').innerText = `Condition: ${card.Condition}`;
+                    document.getElementById('quantity').innerText = `Quantity: ${card.Quantity}`;
+                    document.getElementById('set-code').innerText = `Set Code: ${card.SetCode}`;
+                    document.getElementById('release-date').innerText = `Release Date: ${card.ReleaseDate}`;
+                    document.getElementById('name').innerText = `Name: ${card.Name}`;
+                    document.getElementById('code').innerText = `Code: ${card.Code}`;
+                })
+                .catch(error => {
+                    console.error('Error fetching card data:', error);
+                });
+        }
+
+        function loadProductList() {
+            fetch('/products')
+                .then(response => response.json())
+                .then(products => {
+                    const productList = document.getElementById('product-list');
+                    products.forEach(product => {
+                        const productItem = document.createElement('div');
+                        productItem.className = 'product-item';
+                        productItem.innerHTML = `Product: ${product['Product Name']} - Quantity: ${product['Quantity']}`;
+                        productList.appendChild(productItem);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching product list:', error);
+                });
+        }
+
+        function previousCard() {
+            if (currentCardId > 0) {
+                currentCardId--;
+                loadCard(currentCardId);
+            }
+        }
+
+        function nextCard() {
+            currentCardId++;
+            loadCard(currentCardId);
+        }
+
+        function flagCard() {
+            fetch('/flag', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ card_id: currentCardId })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Card flagged successfully');
+                    } else {
+                        alert('Error flagging card: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error flagging card:', error);
+                });
+        }
+
+        // Load the first card and product list on page load
+        loadCard(currentCardId);
+        loadProductList();
+    </script>
+</body>
+</html>
