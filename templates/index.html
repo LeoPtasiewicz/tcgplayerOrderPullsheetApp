@@ -30,19 +30,47 @@
             align-items: center;
         }
         .card-image {
+            margin-left: 200px; /* Adjust this value as needed */
+        }
+        #quantity {
+            font-size: 30px; /* Make product name even larger */
+            font-weight: bold; /* Optional: make it bold */
+        }
+        #product-name {
+            font-size: 30px; /* Make product name even larger */
+            font-weight: bold; /* Optional: make it bold */
+        }
+        #condition {
+            font-size: 30px; /* Make product name even larger */
+            font-weight: bold; /* Optional: make it bold */
+        }
+        #release-date {
+            font-size: 30px; /* Make product name even larger */
+            font-weight: bold; /* Optional: make it bold */
+        }
+        .card-image {
             width: 400px;
             height: 600px;
             object-fit: contain;
         }
         .card-details {
-            margin-top: 20px;
+            margin-top: 30px;
+            font-size: 20px;
         }
         .navigation {
-            margin-top: 20px;
+            position: absolute;
+            left: 20px;
+            top: 30%; /* Very top of the container */
+            transform: none;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
         }
         .navigation button {
-            padding: 10px 20px;
-            font-size: 16px;
+            padding: 15px 30px;  /* Increase padding */
+            font-size: 20px;     /* Increase font size */
+            margin: 20px;      /* Add some margin between buttons */
+            cursor: pointer;     /* Add a pointer cursor on hover */
         }
         .product-item {
             margin-bottom: 10px;
@@ -97,26 +125,57 @@
         .chatbot-modal-footer button {
             padding: 5px 10px;
         }
+        .product-item {
+        margin-bottom: 10px;
+        padding: 5px;
+        cursor: pointer;
+        }
+        .product-item:hover {
+            background-color: #f0f0f0;
+        }
+        .product-item.selected {
+            background-color: #e0e0e0;
+            font-weight: bold;
+        }
+        .main-content {
+        position: relative; /* Add this */
+        }
+
+        .card-details {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .primary-details {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
     <div class="main-content">
+        <div class="navigation">
+            <button onclick="previousCard()">Previous</button>
+            <button onclick="nextCard()">Next</button>
+            <button onclick="flagCard()">Flag in Discord</button>
+        </div>
         <div class="container">
             <img id="card-image" class="card-image" src="" alt="Card Image">
             <div class="card-details">
+                <div class="primary-details">
+                    <p id="condition"></p>
+                    <p id="quantity"></p>
+                </div>
                 <p id="product-name"></p>
                 <p id="product-url"></p>
-                <p id="condition"></p>
-                <p id="quantity"></p>
                 <p id="set-code"></p>
                 <p id="release-date"></p>
                 <p id="name"></p>
-                <p id="code"></p>
             </div>
-            <div class="navigation">
-                <button onclick="previousCard()">Previous</button>
-                <button onclick="nextCard()">Next</button>
-                <button onclick="flagCard()">Flag in Discord</button>
+            
             </div>
         </div>
     </div>
@@ -155,26 +214,17 @@
                     document.getElementById('release-date').innerText = `Release Date: ${card.ReleaseDate}`;
                     document.getElementById('name').innerText = `Name: ${card.Name}`;
                     document.getElementById('code').innerText = `Code: ${card.Code}`;
-                })
-                .catch(error => {
-                    console.error('Error fetching card data:', error);
-                });
-        }
-
-        function loadProductList() {
-            fetch('/products')
-                .then(response => response.json())
-                .then(products => {
-                    const productList = document.getElementById('product-list');
-                    products.forEach(product => {
-                        const productItem = document.createElement('div');
-                        productItem.className = 'product-item';
-                        productItem.innerHTML = `Product: ${product['Product Name']} - Quantity: ${product['Quantity']}`;
-                        productList.appendChild(productItem);
+                    const productItems = document.querySelectorAll('.product-item');
+                    productItems.forEach((item, index) => {
+                        if (index === cardId) {
+                            item.classList.add('selected');
+                        } else {
+                            item.classList.remove('selected');
+                        }
                     });
                 })
                 .catch(error => {
-                    console.error('Error fetching product list:', error);
+                    console.error('Error fetching card data:', error);
                 });
         }
 
@@ -210,7 +260,28 @@
                     console.error('Error flagging card:', error);
                 });
         }
-
+        function loadProductList() {
+    fetch('/products')
+        .then(response => response.json())
+        .then(products => {
+            const productList = document.getElementById('product-list');
+            productList.innerHTML = ''; // Clear existing list
+            products.forEach((product, index) => {
+                const productItem = document.createElement('div');
+                productItem.className = 'product-item';
+                productItem.innerHTML = `Product: ${product['Product Name']} - Quantity: ${product['Quantity']}`;
+                productItem.onclick = function() {
+                    currentCardId = index;
+                    loadCard(currentCardId);
+                };
+                productItem.style.cursor = 'pointer'; // Add cursor style to indicate clickable
+                productList.appendChild(productItem);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching product list:', error);
+        });
+}
         // Load the first card and product list on page load
         loadCard(currentCardId);
         loadProductList();

@@ -41,8 +41,9 @@ def get_card(card_id):
 
 @app.route('/products')
 def get_products():
-    products = df[['Product Name', 'Quantity']].to_dict(orient='records')
+    products = df[['Product Name', 'Quantity']].reset_index().to_dict(orient='records')
     return jsonify(products)
+
 
 @app.route('/flag', methods=['POST'])
 def flag_card():
